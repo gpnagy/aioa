@@ -241,9 +241,10 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
 
     public function loadMetaBoxes(){
         if($this->is_edit_page('new')) {
-            add_meta_box("tracking_tag_type", "Tracking Tag Type", array(&$this, 'tracking_tag_type'), "trackingtag", "advanced", "default");
+            add_meta_box("tracking_tag_type", "Tracking Tag Type", array(&$this, 'tracking_tag_type'), "trackingtag", "normal", "default");
         }
-        add_meta_box("tracking_tag_id", "Tracking Tag Details", array(&$this, 'field_container'), "trackingtag", "advanced", "default");
+        add_meta_box("tracking_tag_id", "Tracking Tag Details", array(&$this, 'field_container'), "trackingtag", "normal", "default");
+        remove_meta_box( 'slugdiv', 'trackingtag', 'normal' ); 
     }
 
     public function field_container() {
@@ -272,9 +273,10 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
         $output .= '<p>' . 'To find this ID, log in to Google Analytics and go to Admin -> Property Settings and find the Tracking ID.' . '</p>';
         $output .= '<input type="hidden" name="tag_type" value="ga" />';
         $output .= '<label for="tag_version">' . __('Tag Type', AIOA_TEXT_DOMAIN) . ': </label>';
-        $output .= '<select name="tag_version">';
-        $output .= $this->generate_select_option($tag_type, 'Classic');
-        $output .= $this->generate_select_option($tag_type, 'Universal');
+        // $output .= '<select name="tag_version">';
+        // $output .= $this->generate_select_option($tag_type, 'Classic');
+        // $output .= $this->generate_select_option($tag_type, 'Universal');
+        // $output .= '</select>';
         return $output;
     }
 
@@ -331,13 +333,13 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
             $tag_type = null;
         }
         ?>
-        <p>Start by choosing the type of tracking tag you would like to add:</p>
-        <label>Tracking Tag Type:</label>
+        <p><?php _e('Start by choosing the type of tracking tag you would like to add', AIOA_TEXT_DOMAIN); ?>:</p>
+        <label><?php _e('Tracking Tag Type', AIOA_TEXT_DOMAIN); ?>:</label>
         <select name="tag_type" id="tag_type">
             <option></option>
-            <option value="ga" <?php if($tag_type == 'ga') echo 'selected'; ?>>Google Analytics</option>
-            <option value="gwt" <?php if($tag_type == 'gwt') echo 'selected'; ?>>Google Webmaster Tools</option>
-            <option value="mkto" <?php if($tag_type == 'mkto') echo 'selected'; ?>>Marketo</option>
+            <option value="ga" <?php if($tag_type == 'ga') echo 'selected'; ?>><?php _e('Google Analytics', AIOA_TEXT_DOMAIN); ?></option>
+            <option value="gwt" <?php if($tag_type == 'gwt') echo 'selected'; ?>><?php _e('Google Webmaster Tools', AIOA_TEXT_DOMAIN); ?></option>
+            <option value="mkto" <?php if($tag_type == 'mkto') echo 'selected'; ?>><?php _e('Marketo', AIOA_TEXT_DOMAIN); ?></option>
         </select>
         <?php 
     }
@@ -348,22 +350,36 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
         if (!empty($_POST["tag_type"])) update_post_meta($post->ID, "tag_type", $_POST["tag_type"]);
     }
 
-    public function show_google_analytics(){
+    public function show_ga_analytics_tags(){
         global $post;
-        $get_google_analytics_tags_args = array(
+        $get_analytics_tags_args = array(
             'post_type'         => 'trackingtag',
-            'posts_per_page'    => -1
+            'posts_per_page'    => -1,
+            'post_status'       => 'publish',
+            'meta_key'          => 'tag_type',
+            'meta_value'        => 'ga'
         );
-        $get_google_analytics_tags = new WP_Query( $get_google_analytics_tags_args );
+        $get_analytics_tags = new WP_Query( $get_analytics_tags_args );
 
-        if ( $get_google_analytics_tags->have_posts() ) {
-            echo "\n" . '<!-- Google Analytics -->' . "\n";
-            while ( $get_google_analytics_tags->have_posts() ) {
-                $get_google_analytics_tags->the_post();
-                echo get_post_meta($post->ID, 'tag_id', TRUE);
+        if ( $get_analytics_tags->have_posts() ) {
+            echo "\n\n" . '<!-- Google Analytics -->' . "\n";
+            echo '<script>' . "\n";
+            while ( $get_analytics_tags->have_posts() ) {
+                $get_analytics_tags->the_post();
+                if ($get_analytics_tags->current_post == 0) {
+                    echo '(function(i,s,o,g,r,a,m){i[\'GoogleAnalyticsObject\']=r;i[r]=i[r]||function(){' . "\n";
+                    echo '(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),' . "\n";
+                    echo 'm=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)' . "\n";
+                    echo '})(window,document,\'script\',\'//www.google-analytics.com/analytics.js\',\'ga\');' . "\n";
+                    echo 'ga(\'create\', \'' . get_post_meta($post->ID, 'tag_id', true) . '\', \'auto\');' . "\n";
+                    echo 'ga(\'send\', \'pageview\');' . "\n";
+                } else {
+                    echo 'ga(\'create\', \'' . get_post_meta($post->ID, 'tag_id', true) . '\', \'auto\', {\'name\': \'' . 'tracker' . get_the_ID() . '\'});' . "\n";
+                    echo 'ga(\'' . 'tracker' . get_the_ID() . '.send\', \'pageview\');' . "\n";
+                }
             }
+            echo '</script>' . "\n";
         } 
-
         echo "\n";
         /* Restore original Post Data */
         wp_reset_postdata();
@@ -385,7 +401,6 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
 
                 $.post(ajaxurl, data, function(response) {
                     $('#tracking_tag_id').fadeOut('fast', function() {
-                        console.log(response);
                         $('#tag_fields').html(response);
                         $('#tracking_tag_id').fadeIn();
                     });

@@ -88,7 +88,7 @@ class AIOAnalytics_Plugin extends AIOAnalytics_LifeCycle {
         add_action('init', array(&$this, 'create_trackingtag_taxonomies'));
         add_action('add_meta_boxes', array(&$this, 'loadMetaBoxes'));
         add_action('save_post', array(&$this, 'save_fields'));
-        add_action('wp_head', array(&$this, 'show_google_analytics'));
+        add_action('wp_head', array(&$this, 'show_ga_analytics_tags'));
         add_action('admin_footer', array(&$this, 'my_action_javascript'));
         add_action('wp_ajax_my_action', array(&$this, 'my_action_callback'));
 
