@@ -126,6 +126,10 @@ class AIOAnalytics_Plugin extends AIOAnalytics_LifeCycle {
         }
         add_action( 'manage_trackingtag_posts_custom_column' , 'custom_trackingtag_column', 10, 2 );
 
+        if ( (strpos($_SERVER['REQUEST_URI'], $this->getSettingsSlug()) !== false) || $this->is_edit_page() ) {
+            wp_enqueue_style('my-style', plugins_url('/css/aioa.css', __FILE__));
+        }
+
         // Example adding a script & style just for the options administration page
         // http://plugin.michael-simpson.com/?page_id=47
         //        if (strpos($_SERVER['REQUEST_URI'], $this->getSettingsSlug()) !== false) {
@@ -153,6 +157,5 @@ class AIOAnalytics_Plugin extends AIOAnalytics_LifeCycle {
         // http://plugin.michael-simpson.com/?page_id=41
 
     }
-
 
 }

@@ -167,9 +167,8 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
         //make sure we are on the backend
         if (!is_admin()) return false;
 
-
         if($new_edit == "edit")
-            return in_array( $pagenow, array( 'post.php',  ) );
+            return in_array( $pagenow, array( 'post.php' ) );
         elseif($new_edit == "new") //check for new post page
             return in_array( $pagenow, array( 'post-new.php' ) );
         else //check for either new or edit
@@ -267,12 +266,20 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
                 $tag_type = null;
             }              
         }
-        $output = '<p>' . 'Tag Type: ' . 'Google Analytics' . '</p>';
-        $output .= '<label for="tag_id">' . __('Tracking ID', AIOA_TEXT_DOMAIN) . ': </label>';
-        $output .= '<input name="tag_id" value="' . $tag_id . '" />';
+        $output .= '<p>' . 'Tag Type: ' . 'Google Analytics' . '</p>';
+
+        $output .= '<table class="form-table">';
+        $output .= '<tbody>';
+        $output .= '<tr>';
+        $output .= '<td><label for="tag_id">' . __('Tracking ID', AIOA_TEXT_DOMAIN) . ': </label></td>';
+        $output .= '<td><input name="tag_id" value="' . $tag_id . '" /></td>';
+        $output .= '</tr>';
+        $output .= '</table>';
+        $output .= '<div class="instructions">';
         $output .= '<p>' . 'To find this ID, log in to Google Analytics and go to Admin -> Property Settings and find the Tracking ID.' . '</p>';
+        $output .= '</div>';
         $output .= '<input type="hidden" name="tag_type" value="ga" />';
-        $output .= '<label for="tag_version">' . __('Tag Type', AIOA_TEXT_DOMAIN) . ': </label>';
+        // $output .= '<label for="tag_version">' . __('Tag Type', AIOA_TEXT_DOMAIN) . ': </label>';
         // $output .= '<select name="tag_version">';
         // $output .= $this->generate_select_option($tag_type, 'Classic');
         // $output .= $this->generate_select_option($tag_type, 'Universal');
