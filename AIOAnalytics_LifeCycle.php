@@ -266,24 +266,25 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
                 $tag_type = null;
             }              
         }
-        $output .= '<p>' . 'Tag Type: ' . 'Google Analytics' . '</p>';
+
+        $output .= '<div class="instructions">';
+        $output .= '<p>' . 'To find this ID, log in to Google Analytics and go to Admin -> Property Settings and find the Tracking ID.' . '</p>';
+        $output .= '</div>';
 
         $output .= '<table class="form-table">';
         $output .= '<tbody>';
         $output .= '<tr>';
-        $output .= '<td><label for="tag_id">' . __('Tracking ID', AIOA_TEXT_DOMAIN) . ': </label></td>';
+        $output .= '<th>' . __('Tag Type', AIOA_TEXT_DOMAIN) . '</th>';
+        $output .= '<td>' . __('Google Analytics', AIOA_TEXT_DOMAIN) . '</td>';
+        $output .= '</tr>';
+
+        $output .= '<tr>';
+        $output .= '<th><label for="tag_id">' . __('Tracking ID', AIOA_TEXT_DOMAIN) . '</label></th>';
         $output .= '<td><input name="tag_id" value="' . $tag_id . '" /></td>';
         $output .= '</tr>';
-        $output .= '</table>';
-        $output .= '<div class="instructions">';
-        $output .= '<p>' . 'To find this ID, log in to Google Analytics and go to Admin -> Property Settings and find the Tracking ID.' . '</p>';
-        $output .= '</div>';
         $output .= '<input type="hidden" name="tag_type" value="ga" />';
-        // $output .= '<label for="tag_version">' . __('Tag Type', AIOA_TEXT_DOMAIN) . ': </label>';
-        // $output .= '<select name="tag_version">';
-        // $output .= $this->generate_select_option($tag_type, 'Classic');
-        // $output .= $this->generate_select_option($tag_type, 'Universal');
-        // $output .= '</select>';
+        $output .= $this->get_page_conditional_logic_fields($post_id);
+        $output .= '</table>';
         return $output;
     }
 
@@ -423,13 +424,27 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
                 $('#tag_fields').html(response);
             });
         <?php } ?>
+
+        $('#tracking_tag_id').on('change', '#tagplacement input[type=radio]', function(){
+            switch($(this).val()){
+                case 'specificpages' :
+                    $('#choosepages').fadeIn('fast');
+                    console.log('specific');
+                    break;
+                case 'allpages' :
+                    $('#choosepages').fadeOut('fast');
+                    console.log('all pages');
+                    break;
+            }  
+        });
+
     });
     </script>
     <?php
     }
 
     public function my_action_callback() {
-        global $wpdb; // this is how you get access to the database
+        global $wpdb;
 
         $tag_type = $_POST['tag_type'];
 
@@ -447,7 +462,31 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
                 break;
         }
         
-        die(); // this is required to return a proper result
+        die();
+    }
+
+    public function get_page_conditional_logic_fields($post_id = null) {
+        $output = null;
+        $output .= '<tr>';
+        $output .= '<th>';
+        $output .= __('Choose where this tag appears', AIOA_TEXT_DOMAIN);
+        $output .= '</th>';
+        $output .= '<td><fieldset>';
+        $output .= '<div id="tagplacement">';
+        $output .= '<label for="allpages">';
+        $output .= '<input type="radio" name="tagscope" value="allpages" />';
+        $output .= '<span>' . __('All Pages', AIOA_TEXT_DOMAIN) . '</span>';
+        $output .= '</label><br />';
+        $output .= '<label for="specificpages">';
+        $output .= '<input type="radio" name="tagscope" value="specificpages" />';
+        $output .= '<span>' . __('Specific Pages', AIOA_TEXT_DOMAIN) . '</label>';
+        $output .= '</div>';
+        $output .= '<div id="choosepages" style="display: none;">';
+        $output .= 'Conditional page choices';
+        $output .= '</div>';
+        $output .= '</fieldset></td>';
+        $output .= '</tr>';
+        return $output;
     }
 
     public function generate_select_option($parameter = null, $value = null, $label = null) {

@@ -1,3 +1,8 @@
+.form-table {
+	width: auto;
+	clear: none;
+}
+
 .instructions {
 	float: right;
 	width: 50%;
