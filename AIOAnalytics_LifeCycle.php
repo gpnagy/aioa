@@ -253,6 +253,7 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
     public function google_analytics_fields($post_id){
         $tag_id = null;
         $tag_type = null;
+        $output = null;
         if (!empty($post_id)) {
             $custom = get_post_custom($post_id);
             if (!empty($custom['tag_id'])) {
@@ -438,6 +439,20 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
             }  
         });
 
+        $('#tracking_tag_id').on('change', '#pagetype', function(){
+            console.log('changed posts');
+            $('#postTypeOptions').hide();
+            $('#loadingimage').show();
+            var data = {
+                'action': 'Get' + $(this).val()
+            };
+            $.post(ajaxurl, data, function(response) {
+                $('#postTypeOptions').html(response);
+                $('#loadingimage').hide();
+                $('#postTypeOptions').fadeIn();
+            });
+        });
+
     });
     </script>
     <?php
@@ -479,10 +494,26 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
         $output .= '</label><br />';
         $output .= '<label for="specificpages">';
         $output .= '<input type="radio" name="tagscope" value="specificpages" />';
-        $output .= '<span>' . __('Specific Pages', AIOA_TEXT_DOMAIN) . '</label>';
+        $output .= '<span>' . __('Specific Pages', AIOA_TEXT_DOMAIN) . '</span>';
+        $output .= '</label>';
         $output .= '</div>';
         $output .= '<div id="choosepages" style="display: none;">';
         $output .= 'Conditional page choices';
+        $output .= '<label for="pagetype">';
+        $output .= '<span>' .  __('Page Type', AIOA_TEXT_DOMAIN) . '</span>';
+        $output .= '<select name="pagetype" id="pagetype">';
+        $output .= '<option>' . '</option>';
+        $output .= '<option value="Posts">' . __('Post', AIOA_TEXT_DOMAIN) . '</option>';
+        $output .= '<option value="PostTypes">' . __('Post Type', AIOA_TEXT_DOMAIN) . '</option>';
+        $output .= '<option value="Pages">' . __('Page', AIOA_TEXT_DOMAIN) . '</option>';
+        $output .= '</select>';
+        $output .= '<select name="operator" id="operator">';
+        $output .= '<option value="equals">' . __('Equals', AIOA_TEXT_DOMAIN) . '</option>';
+        $output .= '<option value="doesnotequal">' . __('Does Not Equal', AIOA_TEXT_DOMAIN) . '</option>';
+        $output .= '<option value="conatins">' . __('Contains', AIOA_TEXT_DOMAIN) . '</option>';
+        $output .= '</select>';
+        $output .= '<span id="postTypeOptions">' . '</span>';
+        $output .= '<img src="' . plugins_url('/img/loading.gif', __FILE__) . '" id="loadingimage" style="display: none;" />';
         $output .= '</div>';
         $output .= '</fieldset></td>';
         $output .= '</tr>';

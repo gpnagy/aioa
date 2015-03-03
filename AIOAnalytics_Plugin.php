@@ -156,6 +156,80 @@ class AIOAnalytics_Plugin extends AIOAnalytics_LifeCycle {
         // Register AJAX hooks
         // http://plugin.michael-simpson.com/?page_id=41
 
+        add_action('wp_ajax_GetPosts', array(&$this, 'ajaxGetPosts'));
+        add_action('wp_ajax_GetPages', array(&$this, 'ajaxGetPages'));
+        add_action('wp_ajax_GetPostTypes', array(&$this, 'ajaxGetPostTypes'));
+
+    }
+
+    public function ajaxGetPosts() {
+        header("Pragma: no-cache");
+        header("Cache-Control: no-cache, must-revalidate");
+        header("Expires: Thu, 01 Jan 1970 00:00:00 GMT");
+        header("Content-type: text/plain");
+
+        $args = array(
+            'post_type' => 'post'
+        );
+        $get_posts = new WP_Query( $args );
+
+        if ( $get_posts->have_posts() ) {
+            echo '<select name="postlist" id="postlist">';
+            while ( $get_posts->have_posts() ) {
+                $get_posts->the_post();
+                echo '<option>' . get_the_title() . '</option>';
+            }
+            echo '</select>';
+        } else {
+            _e('No posts found', AIOA_TEXT_DOMAIN);
+        }
+        wp_reset_postdata();
+        die();
+    }
+
+    public function ajaxGetPages() {
+        header("Pragma: no-cache");
+        header("Cache-Control: no-cache, must-revalidate");
+        header("Expires: Thu, 01 Jan 1970 00:00:00 GMT");
+        header("Content-type: text/plain");
+
+        $args = array(
+            'post_type' => 'page'
+        );
+        $get_posts = new WP_Query( $args );
+
+        if ( $get_posts->have_posts() ) {
+            echo '<select name="pagelist" id="pagelist">';
+            while ( $get_posts->have_posts() ) {
+                $get_posts->the_post();
+                echo '<option>' . get_the_title() . '</option>';
+            }
+            echo '</select>';
+        } else {
+            _e('No posts found', AIOA_TEXT_DOMAIN);
+        }
+        wp_reset_postdata();
+        die();
+    }
+
+    public function ajaxGetPostTypes() {
+        header("Pragma: no-cache");
+        header("Cache-Control: no-cache, must-revalidate");
+        header("Expires: Thu, 01 Jan 1970 00:00:00 GMT");
+        header("Content-type: text/plain");
+
+        $args = array(
+            'public'   => true,
+            '_builtin' => true
+        );
+
+        $post_types = get_post_types( $args, 'names' );
+        echo '<select name="posttypeslist" id="posttypeslist">';
+        foreach ( $post_types as $post_type ) {
+            echo '<option>' . $post_type . '</option>';
+        }
+        echo '</select>';
+        die();
     }
 
 }
