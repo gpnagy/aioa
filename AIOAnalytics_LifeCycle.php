@@ -240,10 +240,9 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
     }
 
     public function loadMetaBoxes(){
-        if($this->is_edit_page('new')) {
-            add_meta_box("tracking_tag_type", "Tracking Tag Type", array(&$this, 'tracking_tag_type'), "trackingtag", "normal", "default");
-        }
+        add_meta_box("tracking_tag_type", "Tracking Tag Type", array(&$this, 'tracking_tag_type'), "trackingtag", "normal", "default");
         add_meta_box("tracking_tag_id", "Tracking Tag Details", array(&$this, 'field_container'), "trackingtag", "normal", "default");
+        add_meta_box("tracking_tag_locations", "Tracking Tag Locations", array(&$this, 'tracking_tag_locations'), "trackingtag", "normal", "default");
         remove_meta_box( 'slugdiv', 'trackingtag', 'normal' ); 
     }
 
@@ -251,28 +250,32 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
         echo '<div id="tag_fields"></div>';
     }
     
+    public function tracking_tag_locations() {
+        echo '<p>' . __('Choose the pages on which this tracking tag should be placed', AIOA_TEXT_DOMAIN) . ':' . '</p>';
+    }
+
     public function google_analytics_fields($post_id){
-        $tag_id = null;
+        $ga_tag_id = null;
         $tag_type = null;
         if (!empty($post_id)) {
             $custom = get_post_custom($post_id);
-            if (!empty($custom['tag_id'])) {
-                $tag_id = $custom['tag_id'][0];
+            if (!empty($custom['ga_tag_id'])) {
+                $ga_tag_id = $custom['ga_tag_id'][0];
             } else {
-                $tag_id = null;
+                $ga_tag_id = null;
             }
-            if (!empty($custom['tag_id'])) {
+            if (!empty($custom['ga_tag_id'])) {
                 $tag_type = $custom['tag_type'][0];
             } else {
                 $tag_type = null;
             }              
         }
-        $output = '<p>' . 'Tag Type: ' . 'Google Analytics' . '</p>';
-        $output .= '<label for="tag_id">' . __('Tracking ID', AIOA_TEXT_DOMAIN) . ': </label>';
-        $output .= '<input name="tag_id" value="' . $tag_id . '" />';
-        $output .= '<p>' . 'To find this ID, log in to Google Analytics and go to Admin -> Property Settings and find the Tracking ID.' . '</p>';
+        $output = '<p>' . __('Tag Type', AIOA_TEXT_DOMAIN) . ': ' . __('Google Analytics', AIOA_TEXT_DOMAIN) . '</p>';
+        $output .= '<label for="ga_tag_id">' . __('Tracking ID', AIOA_TEXT_DOMAIN) . ': </label>';
+        $output .= '<input name="ga_tag_id" value="' . $ga_tag_id . '" />';
+        $output .= '<p>' . __('To find this ID, log in to Google Analytics and go to Admin -> Property Settings and find the Tracking ID.', AIOA_TEXT_DOMAIN) . '</p>';
         $output .= '<input type="hidden" name="tag_type" value="ga" />';
-        $output .= '<label for="tag_version">' . __('Tag Type', AIOA_TEXT_DOMAIN) . ': </label>';
+        // $output .= '<label for="tag_version">' . __('Tag Type', AIOA_TEXT_DOMAIN) . ': </label>';
         // $output .= '<select name="tag_version">';
         // $output .= $this->generate_select_option($tag_type, 'Classic');
         // $output .= $this->generate_select_option($tag_type, 'Universal');
@@ -281,18 +284,18 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
     }
 
     public function google_webmaster_tools_fields($post_id){
-        $tag_id = null;
+        $gwt_tag_id = null;
         $tag_type = null;
 
         if (!empty($post_id)) {
             $custom = get_post_custom($post_id);
-            if (!empty($custom['tag_id'])) {
-                $tag_id = $custom['tag_id'][0];
+            if (!empty($custom['gwt_tag_id'])) {
+                $gwt_tag_id = $custom['gwt_tag_id'][0];
             }
         }
 
         $output = '<label><strong>' . __('Webmaster Tools Verification Tag', AIOA_TEXT_DOMAIN) . '</strong>: </label>';
-        $output .= '<input name="tag_id" value="' . $tag_id . '" />';
+        $output .= '<input name="gwt_tag_id" value="' . $gwt_tag_id . '" />';
         $output .= '<input type="hidden" name="tag_type" value="gwt" />';
         $output .= '<p> ' . __('This tag is provided when adding a new site to', AIOA_TEXT_DOMAIN) . ' ' . '<a href="https://www.google.com/webmasters/tools/home">' . __('Google Webmaster Tools', AIOA_TEXT_DOMAIN) . '</a>.' . ' ' . __('If your site is already setup in Google Webmaster Tools you can find the tag here', AIOA_TEXT_DOMAIN) . ':';
         $output .= '<ol>';
@@ -347,6 +350,8 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
     public function save_fields(){
         global $post;
         if (!empty($_POST["tag_id"])) update_post_meta($post->ID, "tag_id", $_POST["tag_id"]);
+        if (!empty($_POST["ga_tag_id"])) update_post_meta($post->ID, "ga_tag_id", $_POST["ga_tag_id"]);
+        if (!empty($_POST["gwt_tag_id"])) update_post_meta($post->ID, "gwt_tag_id", $_POST["gwt_tag_id"]);
         if (!empty($_POST["tag_type"])) update_post_meta($post->ID, "tag_type", $_POST["tag_type"]);
     }
 
@@ -415,6 +420,21 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
             $.post(ajaxurl, data, function(response) {
                 $('#tag_fields').html(response);
             });
+
+            $('#tag_type').change(function() {
+                var data = {
+                    'action': 'my_action',
+                    'tag_type': $(this).val(),
+                    'post_id': <?=$post->ID?>
+                };
+
+                $.post(ajaxurl, data, function(response) {
+                    $('#tracking_tag_id').fadeOut('fast', function() {
+                        $('#tag_fields').html(response);
+                        $('#tracking_tag_id').fadeIn();
+                    });
+                });
+            });
         <?php } ?>
     });
     </script>
@@ -422,7 +442,7 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
     }
 
     public function my_action_callback() {
-        global $wpdb; // this is how you get access to the database
+        global $wpdb;
 
         $tag_type = $_POST['tag_type'];
 
@@ -440,7 +460,7 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
                 break;
         }
         
-        die(); // this is required to return a proper result
+        die();
     }
 
     public function generate_select_option($parameter = null, $value = null, $label = null) {

@@ -25,7 +25,6 @@ class AIOAnalytics_OptionsManager {
         return get_class($this) . '_';
     }
 
-
     /**
      * Define your options meta data here as an array, where each element in the array
      * @return array of key=>display-name and/or key=>array(display-name, choice1, choice2, ...)
