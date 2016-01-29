@@ -251,7 +251,15 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
     }
     
     public function tracking_tag_locations() {
+
+
+
         echo '<p>' . __('Choose the pages on which this tracking tag should be placed', AIOA_TEXT_DOMAIN) . ':' . '</p>';
+        echo '<p><button id="allpages">' . __('All pages', AIOA_TEXT_DOMAIN) . '</button></p>';
+        echo '<div id="allpages_container"></div>';
+        echo '<p><button id="selectedpages">' . __('Just these pages', AIOA_TEXT_DOMAIN) . '</button></p>';
+        echo '<div id="selected_pages_container"></div>';
+
     }
 
     public function google_analytics_fields($post_id){
@@ -397,51 +405,115 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
     jQuery(document).ready(function($) {
         <?php if($this->is_edit_page('new')) { ?>
             $('#tracking_tag_id').hide();
-            $('#tag_type').change(function() {
-                var data = {
-                    'action': 'my_action',
-                    'tag_type': $(this).val(),
-                    'post_id': <?=$post->ID?>
-                };
-
-                $.post(ajaxurl, data, function(response) {
-                    $('#tracking_tag_id').fadeOut('fast', function() {
-                        $('#tag_fields').html(response);
-                        $('#tracking_tag_id').fadeIn();
-                    });
-                });
-            });
         <?php } else { ?>
             var data = {
-                'action': 'my_action',
+                'action': 'select_tracking_type',
                 'tag_type': '<?=get_post_meta($post->ID, "tag_type", true)?>',
                 'post_id': <?=$post->ID?>
             };
             $.post(ajaxurl, data, function(response) {
                 $('#tag_fields').html(response);
             });
+        <?php } ?>
+        $('#tag_type').change(function() {
+            var data = {
+                'action': 'select_tracking_type',
+                'tag_type': $(this).val(),
+                'post_id': <?=$post->ID?>
+            };
 
-            $('#tag_type').change(function() {
-                var data = {
-                    'action': 'my_action',
-                    'tag_type': $(this).val(),
-                    'post_id': <?=$post->ID?>
-                };
-
-                $.post(ajaxurl, data, function(response) {
-                    $('#tracking_tag_id').fadeOut('fast', function() {
-                        $('#tag_fields').html(response);
-                        $('#tracking_tag_id').fadeIn();
-                    });
+            $.post(ajaxurl, data, function(response) {
+                $('#tracking_tag_id').fadeOut('fast', function() {
+                    $('#tag_fields').html(response);
+                    $('#tracking_tag_id').fadeIn();
                 });
             });
-        <?php } ?>
+        });
+    
+        $('button#selectedpages').click(function(e) {
+            e.preventDefault();
+            var data = {
+                'action': 'selectedpages_chooser',
+                'post_id': <?=$post->ID?>
+            };
+            $.post(ajaxurl, data, function(response) {
+                $('#allpages_container').hide(function() {
+                    $('#selected_pages_container').hide();
+                    $('#selected_pages_container').html(response);
+                    $('#selected_pages_container').fadeIn();
+                });
+            });
+        });
+
+        $('button#allpages').click(function(e) {
+            e.preventDefault();
+            var data = {
+                'action': 'allpages',
+                'post_id': <?=$post->ID?>
+            };
+            $.post(ajaxurl, data, function(response) {
+                $('#selected_pages_container').hide(function() {
+                    $('#allpages_container').hide();
+                    $('#allpages_container').html(response);
+                    $('#allpages_container').fadeIn();
+                });
+            });
+        });
     });
     </script>
+    
     <?php
+
+        $all_pages_options_display = null;
+        $selected_pages_options_display = null;
+
+        $show_tag_on_type = null;
+        $show_tag_on_type = get_post_meta($post->ID, 'display_tag_on', true);
+
+        switch ($show_tag_on_type) {
+            case 'all_pages': ?>
+                <script>
+                jQuery(document).ready(function($) {
+                    var data = {
+                        'action': 'allpages',
+                        'post_id': <?=$post->ID?>
+                    };
+                    $.post(ajaxurl, data, function(response) {
+                        $('#selected_pages_container').hide(function() {
+                            $('#allpages_container').hide();
+                            $('#allpages_container').html(response);
+                            $('#allpages_container').fadeIn();
+                        });
+                    });
+                });
+                </script>
+                <?php break;
+            case 'selected_pages': ?>
+                <script>
+                jQuery(document).ready(function($) {
+                    var data = {
+                        'action': 'selectedpages_chooser',
+                        'post_id': <?=$post->ID?>
+                    };
+                    $.post(ajaxurl, data, function(response) {
+                        $('#allpages_container').hide(function() {
+                            $('#selected_pages_container').hide();
+                            $('#selected_pages_container').html(response);
+                            $('#selected_pages_container').fadeIn();
+                        });
+                    });
+                });
+                </script>
+                <?php break;
+            default:
+                break;
+        }
+
+
+
     }
 
-    public function my_action_callback() {
+    public function select_tracking_type_callback() {
         global $wpdb;
 
         $tag_type = $_POST['tag_type'];
@@ -463,6 +535,28 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
         die();
     }
 
+    public function allpages_callback() {
+        global $wpdb;
+        echo 'Will run on all pages';
+        if (!empty($_POST['post_id']) && is_numeric($_POST['post_id'])) {
+            update_post_meta($_POST['post_id'], 'display_tag_on', 'all_pages');
+        }
+        die();
+    }
+
+    public function selectedpages_chooser_callback() {
+        global $wpdb;
+        if (!empty($_POST['post_id']) && is_numeric($_POST['post_id'])) {
+            update_post_meta($_POST['post_id'], 'display_tag_on', 'selected_pages');
+        }
+        echo 'Choose the pages to display this tag on';
+        echo '<select name="page_type">';
+        echo $this->generate_select_option('','postType','Post Type');
+        echo $this->generate_select_option('','loggedinuserType','Logged In User Type');
+        echo '</select>';
+        die();
+    }
+
     public function generate_select_option($parameter = null, $value = null, $label = null) {
         $selected = null;
         if (empty($label)) $label = $value;
@@ -471,7 +565,6 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
         }
         return '<option value="' . $value . '" ' . $selected . '>' . $label . '</option>';
     }
-
 
     /**
      * @param  $name string name of a database table
