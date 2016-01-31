@@ -427,6 +427,16 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
         <?php } ?>
 
         $('#tracking_tag_id').on('change', '#tagplacement input[type=radio]', function(){
+
+            // Save the selection to database
+            var data = {
+                'action': 'PlacementSave',
+                'placement_type': $(this).val(),
+                'post_id': <?=$post->ID?>
+            };
+
+            $.post(ajaxurl, data);
+
             switch($(this).val()){
                 case 'specificpages' :
                     $('#choosepages').fadeIn('fast');
@@ -561,5 +571,4 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
     public function getAjaxUrl($actionName) {
         return admin_url('admin-ajax.php') . '?action=' . $actionName;
     }
-
 }
