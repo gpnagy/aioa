@@ -402,79 +402,109 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
     public function chooseTagType_javascript() {
         global $post;
     ?>
-    <script type="text/javascript">
-    jQuery(document).ready(function($) {
-        <?php if($this->is_edit_page('new')) { ?>
-            $('#tracking_tag_id').hide();
-        <?php } else { ?>
-            var data = {
-                'action': 'ChooseTagType',
-                'tag_type': '<?=get_post_meta($post->ID, "tag_type", true)?>',
-                'post_id': <?=$post->ID?>
-            };
-            $.post(ajaxurl, data, function(response) {
-                $('#tag_fields').html(response);
-            });
-        <?php } ?>
-
-        $('#tag_type').change(function() {
-            var data = {
-                'action': 'ChooseTagType',
-                'tag_type': $(this).val(),
-                'post_id': <?=$post->ID?>
-            };
-
-            $.post(ajaxurl, data, function(response) {
-                $('#tracking_tag_id').fadeOut('fast', function() {
+        <script type="text/javascript">
+        jQuery(document).ready(function($) {
+            <?php if($this->is_edit_page('new')) { ?>
+                $('#tracking_tag_id').hide();
+            <?php } else { ?>
+                var data = {
+                    'action': 'ChooseTagType',
+                    'tag_type': '<?=get_post_meta($post->ID, "tag_type", true)?>',
+                    'post_id': <?=$post->ID?>
+                };
+                $.post(ajaxurl, data, function(response) {
                     $('#tag_fields').html(response);
-                    $('#tracking_tag_id').fadeIn();
+                });
+            <?php } ?>
+
+            $('#tag_type').change(function() {
+                var data = {
+                    'action': 'ChooseTagType',
+                    'tag_type': $(this).val(),
+                    'post_id': <?=$post->ID?>
+                };
+
+                $.post(ajaxurl, data, function(response) {
+                    $('#tracking_tag_id').fadeOut('fast', function() {
+                        $('#tag_fields').html(response);
+                        $('#tracking_tag_id').fadeIn();
+                    });
                 });
             });
-        });
 
-        $('#tracking_tag_id').on('change', '#tagplacement input[type=radio]', function(){
+            $('#tracking_tag_id').on('change', '#tagplacement input[type=radio]', function(){
 
-            // Save the selection to database
-            var data = {
-                'action': 'PlacementSave',
-                'placement_type': $(this).val(),
-                'post_id': <?=$post->ID?>
-            };
+                // Save the selection to database
+                var data = {
+                    'action': 'PlacementSave',
+                    'placement_type': $(this).val(),
+                    'post_id': <?=$post->ID?>
+                };
 
-            $.post(ajaxurl, data);
+                $.post(ajaxurl, data);
 
-            switch($(this).val()){
-                case 'specificpages' :
-                    $('#choosepages').fadeIn('fast');
-                    console.log('specific');
-                    break;
-                case 'allpages' :
-                    $('#choosepages').fadeOut('fast');
-                    console.log('all pages');
-                    break;
-            }  
-        });
-
-        $('#tracking_tag_id').on('change', '#pagetype', function(){
-            console.log('changed posts');
-            $('#postTypeOptions').hide();
-            $('#loadingimage').show();
-            var data = {
-                'action': 'Get' + $(this).val()
-            };
-            $.post(ajaxurl, data, function(response) {
-                $('#postTypeOptions').html(response);
-                $('#loadingimage').hide();
-                $('#postTypeOptions').fadeIn();
+                switch($(this).val()){
+                    case 'specificpages' :
+                        $('#choosepages').fadeIn('fast');
+                        console.log('specific');
+                        break;
+                    case 'allpages' :
+                        $('#choosepages').fadeOut('fast');
+                        console.log('all pages');
+                        break;
+                }  
             });
-        });
 
-    });
-    </script>
-    <?php
-    }
+            $('#tracking_tag_id').on('change', '#pagetype', function(){
+                console.log('changed posts');
+                $('#postTypeOptions').hide();
+                $('#loadingimage').show();
+                var data = {
+                    'action': 'Get' + $(this).val(),
+                    'pagetype': $(this).val(),
+                    'post_id': <?=$post->ID?>
+                };
+                $.post(ajaxurl, data, function(response) {
+                    $('#postTypeOptions').html(response);
+                    $('#loadingimage').hide();
+                    $('#postTypeOptions').fadeIn();
+                });
+            });
+
+            <?php 
+            
+            $pagetype = get_post_meta($post->ID, 'pagetype', true);
+
+            switch ($pagetype) {
+                case 'Posts': 
+                    ?>
+                    var data = {
+                        'action': 'GetPosts',
+                        'pagetype': 'Posts',
+                        'post_id': <?=$post->ID?>
+                    };
+                    $.post(ajaxurl, data, function(response) {
+                        $('#postTypeOptions').html(response);
+                        $('#loadingimage').hide();
+                        $('#postTypeOptions').fadeIn();
+                    });
+                    <?php 
+                    break;
+                
+                default:
+                    break;
+            } ?>
+
+        });
+        </script>
+    <?php }
 
     public function ajaxChooseTagType_callback() {
+        header("Pragma: no-cache");
+        header("Cache-Control: no-cache, must-revalidate");
+        header("Expires: Thu, 01 Jan 1970 00:00:00 GMT");
+        header("Content-type: text/plain");
+        
         global $wpdb;
 
         $tag_type = $_POST['tag_type'];
@@ -511,6 +541,11 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
         header("Expires: Thu, 01 Jan 1970 00:00:00 GMT");
         header("Content-type: text/plain");
 
+        update_post_meta($_POST['post_id'], 'pagetype', $_POST['pagetype']);
+
+        $selected_post = null;
+        $selected_post = get_post_meta($_POST['post_id'], 'selectedPosts', true);
+
         $args = array(
             'post_type' => 'post'
         );
@@ -520,7 +555,7 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
             echo '<select name="postlist" id="postlist">';
             while ( $get_posts->have_posts() ) {
                 $get_posts->the_post();
-                echo '<option>' . get_the_title() . '</option>';
+                echo $this->generate_select_option($selected_post, get_the_ID(), get_the_title());
             }
             echo '</select>';
         } else {
@@ -536,16 +571,21 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
         header("Expires: Thu, 01 Jan 1970 00:00:00 GMT");
         header("Content-type: text/plain");
 
+        update_post_meta($_POST['post_id'], 'pagetype', $_POST['pagetype']);
+
         $args = array(
             'post_type' => 'page'
         );
         $get_posts = new WP_Query( $args );
 
+        $selected_page = null;
+        $selected_page = get_post_meta($_POST['post_id'], 'pagelist', true);
+
         if ( $get_posts->have_posts() ) {
             echo '<select name="pagelist" id="pagelist">';
             while ( $get_posts->have_posts() ) {
                 $get_posts->the_post();
-                echo '<option>' . get_the_title() . '</option>';
+                echo $this->generate_select_option($selected_page, get_the_ID(), get_the_title());
             }
             echo '</select>';
         } else {
@@ -561,6 +601,10 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
         header("Expires: Thu, 01 Jan 1970 00:00:00 GMT");
         header("Content-type: text/plain");
 
+        $selected_post_type = null;
+        $selected_post_type = get_post_meta($_POST['post_id'], 'pagetype', true);
+        update_post_meta($_POST['post_id'], 'pagetype', $_POST['pagetype']);
+
         $args = array(
             'public'   => true,
             '_builtin' => true
@@ -569,7 +613,7 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
         $post_types = get_post_types( $args, 'names' );
         echo '<select name="posttypeslist" id="posttypeslist">';
         foreach ( $post_types as $post_type ) {
-            echo '<option>' . $post_type . '</option>';
+            echo $this->generate_select_option($selected_post_type, $post_type, $post_type);
         }
         echo '</select>';
         die();
@@ -578,6 +622,7 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
     public function get_page_conditional_logic_fields($post_id = null) {
         $somepages = null;
         $allpages = null;
+        $pagetype = null;
         $display_somepage_options = null;
 
         $display_post_on = get_post_meta($post_id, 'display_tag_on', true);
@@ -587,6 +632,8 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
             $allpages = ' checked';
             $display_somepage_options = ' style="display: none;"';
         }
+
+        $pagetype = get_post_meta($post_id, 'pagetype', true);
 
         $output = null;
         $output .= '<tr>';
@@ -609,10 +656,10 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
         $output .= '<label for="pagetype">';
         $output .= '<span>' .  __('Page Type', AIOA_TEXT_DOMAIN) . '</span>';
         $output .= '<select name="pagetype" id="pagetype">';
-        $output .= '<option>' . '</option>';
-        $output .= '<option value="Posts">' . __('Post', AIOA_TEXT_DOMAIN) . '</option>';
-        $output .= '<option value="PostTypes">' . __('Post Type', AIOA_TEXT_DOMAIN) . '</option>';
-        $output .= '<option value="Pages">' . __('Page', AIOA_TEXT_DOMAIN) . '</option>';
+        $output .= $this->generate_select_option();
+        $output .= $this->generate_select_option($pagetype, 'Posts', __('Post', AIOA_TEXT_DOMAIN));
+        $output .= $this->generate_select_option($pagetype, 'PostTypes', __('Post Type', AIOA_TEXT_DOMAIN));
+        $output .= $this->generate_select_option($pagetype, 'Pages', __('Posts', AIOA_TEXT_DOMAIN));
         $output .= '</select>';
         $output .= '<select name="operator" id="operator">';
         $output .= '<option value="equals">' . __('Equals', AIOA_TEXT_DOMAIN) . '</option>';
@@ -635,7 +682,6 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
         }
         return '<option value="' . $value . '" ' . $selected . '>' . $label . '</option>';
     }
-
 
     /**
      * @param  $name string name of a database table
