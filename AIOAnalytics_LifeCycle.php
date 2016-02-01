@@ -239,9 +239,7 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
     }
 
     public function loadMetaBoxes(){
-        if($this->is_edit_page('new')) {
-            add_meta_box("tracking_tag_type", "Tracking Tag Type", array(&$this, 'tracking_tag_type'), "trackingtag", "normal", "default");
-        }
+        add_meta_box("tracking_tag_type", "Tracking Tag Type", array(&$this, 'tracking_tag_type'), "trackingtag", "normal", "default");
         add_meta_box("tracking_tag_id", "Tracking Tag Details", array(&$this, 'field_container'), "trackingtag", "normal", "default");
         remove_meta_box( 'slugdiv', 'trackingtag', 'normal' ); 
     }
@@ -251,17 +249,17 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
     }
     
     public function google_analytics_fields($post_id){
-        $tag_id = null;
+        $ga_tag_id = null;
         $tag_type = null;
         $output = null;
         if (!empty($post_id)) {
             $custom = get_post_custom($post_id);
-            if (!empty($custom['tag_id'])) {
-                $tag_id = $custom['tag_id'][0];
+            if (!empty($custom['ga_tag_id'])) {
+                $ga_tag_id = $custom['ga_tag_id'][0];
             } else {
-                $tag_id = null;
+                $ga_tag_id = null;
             }
-            if (!empty($custom['tag_id'])) {
+            if (!empty($custom['ga_tag_id'])) {
                 $tag_type = $custom['tag_type'][0];
             } else {
                 $tag_type = null;
@@ -274,14 +272,17 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
 
         $output .= '<table class="form-table">';
         $output .= '<tbody>';
-        $output .= '<tr>';
-        $output .= '<th>' . __('Tag Type', AIOA_TEXT_DOMAIN) . '</th>';
-        $output .= '<td>' . __('Google Analytics', AIOA_TEXT_DOMAIN) . '</td>';
-        $output .= '</tr>';
+
+        if($this->is_edit_page('new')) {
+            $output .= '<tr>';
+            $output .= '<th><label for="ga_tag_id">' . __('Tracking ID', AIOA_TEXT_DOMAIN) . '</label></th>';
+            $output .= '<td>' . $this->tracking_tag_type() . '</td>';
+            $output .= '</tr>';
+        }
 
         $output .= '<tr>';
-        $output .= '<th><label for="tag_id">' . __('Tracking ID', AIOA_TEXT_DOMAIN) . '</label></th>';
-        $output .= '<td><input name="tag_id" value="' . $tag_id . '" /></td>';
+        $output .= '<th><label for="ga_tag_id">' . __('Tracking ID', AIOA_TEXT_DOMAIN) . '</label></th>';
+        $output .= '<td><input name="ga_tag_id" value="' . $ga_tag_id . '" /></td>';
         $output .= '</tr>';
         $output .= '<input type="hidden" name="tag_type" value="ga" />';
         $output .= $this->get_page_conditional_logic_fields($post_id);
@@ -290,18 +291,18 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
     }
 
     public function google_webmaster_tools_fields($post_id){
-        $tag_id = null;
+        $gwt_tag_id = null;
         $tag_type = null;
 
         if (!empty($post_id)) {
             $custom = get_post_custom($post_id);
-            if (!empty($custom['tag_id'])) {
-                $tag_id = $custom['tag_id'][0];
+            if (!empty($custom['gwt_tag_id'])) {
+                $gwt_tag_id = $custom['gwt_tag_id'][0];
             }
         }
 
         $output = '<label><strong>' . __('Webmaster Tools Verification Tag', AIOA_TEXT_DOMAIN) . '</strong>: </label>';
-        $output .= '<input name="tag_id" value="' . $tag_id . '" />';
+        $output .= '<input name="gwt_tag_id" value="' . $gwt_tag_id . '" />';
         $output .= '<input type="hidden" name="tag_type" value="gwt" />';
         $output .= '<p> ' . __('This tag is provided when adding a new site to', AIOA_TEXT_DOMAIN) . ' ' . '<a href="https://www.google.com/webmasters/tools/home">' . __('Google Webmaster Tools', AIOA_TEXT_DOMAIN) . '</a>.' . ' ' . __('If your site is already setup in Google Webmaster Tools you can find the tag here', AIOA_TEXT_DOMAIN) . ':';
         $output .= '<ol>';
@@ -312,22 +313,23 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
         $output .= '<li>' . __('Choose HTML Tag', AIOA_TEXT_DOMAIN) . '</li>';
         $output .= '<li>' . __('Copy the characters between the', AIOA_TEXT_DOMAIN) . ' ' . '<code>content="YOUR_CODE"</code>' . ' ' . __('quotes', AIOA_TEXT_DOMAIN) . '</li>';
         $output .= '</ol></p>';
+        $output .= $this->get_page_conditional_logic_fields($post_id);
         return $output;
     }
 
     public function marketo_fields($post_id){
-        $tag_id = null;
+        $marketo_tag_id = null;
         $tag_type = null;
 
         if (!empty($post_id)) {
             $custom = get_post_custom($post_id);
-            if (!empty($custom['tag_id'])) {
-                $tag_id = $custom['tag_id'][0];
+            if (!empty($custom['marketo_tag_id'])) {
+                $marketo_tag_id = $custom['marketo_tag_id'][0];
             }
         }
 
         $output = '<label><strong>' . __('Marketo ID', AIOA_TEXT_DOMAIN) . '</strong>: </label>';
-        $output .= '<input name="tag_id" value="' . $tag_id . '" />';
+        $output .= '<input name="marketo_tag_id" value="' . $tag_id . '" />';
         $output .= '<input type="hidden" name="tag_type" value="mkto" />';
 
         return $output;
@@ -345,18 +347,21 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
         <p><?php _e('Start by choosing the type of tracking tag you would like to add', AIOA_TEXT_DOMAIN); ?>:</p>
         <label><?php _e('Tracking Tag Type', AIOA_TEXT_DOMAIN); ?>:</label>
         <select name="tag_type" id="tag_type">
-            <option></option>
-            <option value="ga" <?php if($tag_type == 'ga') echo 'selected'; ?>><?php _e('Google Analytics', AIOA_TEXT_DOMAIN); ?></option>
-            <option value="gwt" <?php if($tag_type == 'gwt') echo 'selected'; ?>><?php _e('Google Webmaster Tools', AIOA_TEXT_DOMAIN); ?></option>
-            <option value="mkto" <?php if($tag_type == 'mkto') echo 'selected'; ?>><?php _e('Marketo', AIOA_TEXT_DOMAIN); ?></option>
+            <?=$this->generate_select_option()?>
+            <?=$this->generate_select_option($tag_type, 'ga', __('Google Analytics', AIOA_TEXT_DOMAIN))?>
+            <?=$this->generate_select_option($tag_type, 'gwt', __('Google Webmaster Tools', AIOA_TEXT_DOMAIN))?>
+            <?=$this->generate_select_option($tag_type, 'mkto', __('Marketo', AIOA_TEXT_DOMAIN))?>
         </select>
         <?php 
     }
 
     public function save_fields(){
         global $post;
-        if (!empty($_POST["tag_id"])) update_post_meta($post->ID, "tag_id", $_POST["tag_id"]);
+        if (!empty($_POST["ga_tag_id"])) update_post_meta($post->ID, "ga_tag_id", $_POST["ga_tag_id"]);
+        if (!empty($_POST["gwt_tag_id"])) update_post_meta($post->ID, "gwt_tag_id", $_POST["gwt_tag_id"]);
+        if (!empty($_POST["marketo_tag_id"])) update_post_meta($post->ID, "marketo_tag_id", $_POST["marketo_tag_id"]);
         if (!empty($_POST["tag_type"])) update_post_meta($post->ID, "tag_type", $_POST["tag_type"]);
+        if (!empty($_POST["tagscope"])) update_post_meta($post->ID, "display_on_pages", $_POST["tagscope"]);
     }
 
     public function show_ga_analytics_tags(){
@@ -394,30 +399,16 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
         wp_reset_postdata();
     }
 
-    public function my_action_javascript() {
+    public function chooseTagType_javascript() {
         global $post;
     ?>
     <script type="text/javascript">
     jQuery(document).ready(function($) {
         <?php if($this->is_edit_page('new')) { ?>
             $('#tracking_tag_id').hide();
-            $('#tag_type').change(function() {
-                var data = {
-                    'action': 'my_action',
-                    'tag_type': $(this).val(),
-                    'post_id': <?=$post->ID?>
-                };
-
-                $.post(ajaxurl, data, function(response) {
-                    $('#tracking_tag_id').fadeOut('fast', function() {
-                        $('#tag_fields').html(response);
-                        $('#tracking_tag_id').fadeIn();
-                    });
-                });
-            });
         <?php } else { ?>
             var data = {
-                'action': 'my_action',
+                'action': 'ChooseTagType',
                 'tag_type': '<?=get_post_meta($post->ID, "tag_type", true)?>',
                 'post_id': <?=$post->ID?>
             };
@@ -425,6 +416,21 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
                 $('#tag_fields').html(response);
             });
         <?php } ?>
+
+        $('#tag_type').change(function() {
+            var data = {
+                'action': 'ChooseTagType',
+                'tag_type': $(this).val(),
+                'post_id': <?=$post->ID?>
+            };
+
+            $.post(ajaxurl, data, function(response) {
+                $('#tracking_tag_id').fadeOut('fast', function() {
+                    $('#tag_fields').html(response);
+                    $('#tracking_tag_id').fadeIn();
+                });
+            });
+        });
 
         $('#tracking_tag_id').on('change', '#tagplacement input[type=radio]', function(){
 
@@ -468,7 +474,7 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
     <?php
     }
 
-    public function my_action_callback() {
+    public function ajaxChooseTagType_callback() {
         global $wpdb;
 
         $tag_type = $_POST['tag_type'];
@@ -490,7 +496,98 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
         die();
     }
 
+    public function ajaxPlacementSave_callback() {
+        header("Pragma: no-cache");
+        header("Cache-Control: no-cache, must-revalidate");
+        header("Expires: Thu, 01 Jan 1970 00:00:00 GMT");
+        header("Content-type: text/plain");
+        update_post_meta($_POST['post_id'], 'display_tag_on', $_POST['placement_type']);
+        die();
+    }
+
+    public function ajaxGetPosts_callback() {
+        header("Pragma: no-cache");
+        header("Cache-Control: no-cache, must-revalidate");
+        header("Expires: Thu, 01 Jan 1970 00:00:00 GMT");
+        header("Content-type: text/plain");
+
+        $args = array(
+            'post_type' => 'post'
+        );
+        $get_posts = new WP_Query( $args );
+
+        if ( $get_posts->have_posts() ) {
+            echo '<select name="postlist" id="postlist">';
+            while ( $get_posts->have_posts() ) {
+                $get_posts->the_post();
+                echo '<option>' . get_the_title() . '</option>';
+            }
+            echo '</select>';
+        } else {
+            _e('No posts found', AIOA_TEXT_DOMAIN);
+        }
+        wp_reset_postdata();
+        die();
+    }
+
+    public function ajaxGetPages_callback() {
+        header("Pragma: no-cache");
+        header("Cache-Control: no-cache, must-revalidate");
+        header("Expires: Thu, 01 Jan 1970 00:00:00 GMT");
+        header("Content-type: text/plain");
+
+        $args = array(
+            'post_type' => 'page'
+        );
+        $get_posts = new WP_Query( $args );
+
+        if ( $get_posts->have_posts() ) {
+            echo '<select name="pagelist" id="pagelist">';
+            while ( $get_posts->have_posts() ) {
+                $get_posts->the_post();
+                echo '<option>' . get_the_title() . '</option>';
+            }
+            echo '</select>';
+        } else {
+            _e('No posts found', AIOA_TEXT_DOMAIN);
+        }
+        wp_reset_postdata();
+        die();
+    }
+
+    public function ajaxGetPostTypes_callback() {
+        header("Pragma: no-cache");
+        header("Cache-Control: no-cache, must-revalidate");
+        header("Expires: Thu, 01 Jan 1970 00:00:00 GMT");
+        header("Content-type: text/plain");
+
+        $args = array(
+            'public'   => true,
+            '_builtin' => true
+        );
+
+        $post_types = get_post_types( $args, 'names' );
+        echo '<select name="posttypeslist" id="posttypeslist">';
+        foreach ( $post_types as $post_type ) {
+            echo '<option>' . $post_type . '</option>';
+        }
+        echo '</select>';
+        die();
+    }
+
     public function get_page_conditional_logic_fields($post_id = null) {
+        $somepages = null;
+        $allpages = null;
+        $display_somepage_options = null;
+
+        $display_post_on = get_post_meta($post_id, 'display_tag_on', true);
+        if (!empty($display_post_on) && $display_post_on === 'specificpages') {
+            $somepages = ' checked';
+        } else {
+            $allpages = ' checked';
+            $display_somepage_options = ' style="display: none;"';
+        }
+
         $output = null;
         $output .= '<tr>';
         $output .= '<th>';
@@ -499,15 +596,15 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
         $output .= '<td><fieldset>';
         $output .= '<div id="tagplacement">';
         $output .= '<label for="allpages">';
-        $output .= '<input type="radio" name="tagscope" value="allpages" />';
+        $output .= '<input type="radio" name="tagscope" value="allpages"' . $allpages . ' />';
         $output .= '<span>' . __('All Pages', AIOA_TEXT_DOMAIN) . '</span>';
         $output .= '</label><br />';
         $output .= '<label for="specificpages">';
-        $output .= '<input type="radio" name="tagscope" value="specificpages" />';
+        $output .= '<input type="radio" name="tagscope" value="specificpages"' . $somepages . '/>';
         $output .= '<span>' . __('Specific Pages', AIOA_TEXT_DOMAIN) . '</span>';
         $output .= '</label>';
         $output .= '</div>';
-        $output .= '<div id="choosepages" style="display: none;">';
+        $output .= '<div id="choosepages"' . $display_somepage_options . '>';
         $output .= 'Conditional page choices';
         $output .= '<label for="pagetype">';
         $output .= '<span>' .  __('Page Type', AIOA_TEXT_DOMAIN) . '</span>';

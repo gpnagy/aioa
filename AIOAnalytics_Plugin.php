@@ -81,9 +81,14 @@ class AIOAnalytics_Plugin extends AIOAnalytics_LifeCycle {
         add_action('add_meta_boxes', array(&$this, 'loadMetaBoxes'));
         add_action('save_post', array(&$this, 'save_fields'));
         add_action('wp_head', array(&$this, 'show_ga_analytics_tags'));
-        add_action('admin_footer', array(&$this, 'my_action_javascript'));
-        add_action('wp_ajax_my_action', array(&$this, 'my_action_callback'));
+        add_action('admin_footer', array(&$this, 'chooseTagType_javascript'));
+        add_action('wp_ajax_ChooseTagType', array(&$this, 'ajaxChooseTagType_callback'));
         add_action('admin_enqueue_scripts', array(&$this, 'register_scripts_and_styles'));
+        add_action('manage_trackingtag_posts_custom_column', 'custom_trackingtag_column', 10, 2 );
+        add_action('wp_ajax_GetPosts', array(&$this, 'ajaxGetPosts_callback'));
+        add_action('wp_ajax_GetPages', array(&$this, 'ajaxGetPages_callback'));
+        add_action('wp_ajax_GetPostTypes', array(&$this, 'ajaxGetPostTypes_callback'));
+        add_action('wp_ajax_PlacementSave', array(&$this, 'ajaxPlacementSave_callback'));
 
         function title_text_input ( $title ) {
             if ( get_post_type() == 'trackingtag' ) {
@@ -117,11 +122,6 @@ class AIOAnalytics_Plugin extends AIOAnalytics_LifeCycle {
                     break;
             }
         }
-        add_action('manage_trackingtag_posts_custom_column', 'custom_trackingtag_column', 10, 2 );
-        add_action('wp_ajax_GetPosts', array(&$this, 'ajaxGetPosts'));
-        add_action('wp_ajax_GetPages', array(&$this, 'ajaxGetPages'));
-        add_action('wp_ajax_GetPostTypes', array(&$this, 'ajaxGetPostTypes'));
-        add_action('wp_ajax_nopriv_PlacementSave', array(&$this, 'ajaxPlacementSave'));
     }
 
     public function register_scripts_and_styles() {
@@ -131,83 +131,6 @@ class AIOAnalytics_Plugin extends AIOAnalytics_LifeCycle {
         }
     }
     
-    public function ajaxGetPosts() {
-        header("Pragma: no-cache");
-        header("Cache-Control: no-cache, must-revalidate");
-        header("Expires: Thu, 01 Jan 1970 00:00:00 GMT");
-        header("Content-type: text/plain");
-
-        $args = array(
-            'post_type' => 'post'
-        );
-        $get_posts = new WP_Query( $args );
-
-        if ( $get_posts->have_posts() ) {
-            echo '<select name="postlist" id="postlist">';
-            while ( $get_posts->have_posts() ) {
-                $get_posts->the_post();
-                echo '<option>' . get_the_title() . '</option>';
-            }
-            echo '</select>';
-        } else {
-            _e('No posts found', AIOA_TEXT_DOMAIN);
-        }
-        wp_reset_postdata();
-        die();
-    }
-
-    public function ajaxGetPages() {
-        header("Pragma: no-cache");
-        header("Cache-Control: no-cache, must-revalidate");
-        header("Expires: Thu, 01 Jan 1970 00:00:00 GMT");
-        header("Content-type: text/plain");
-
-        $args = array(
-            'post_type' => 'page'
-        );
-        $get_posts = new WP_Query( $args );
-
-        if ( $get_posts->have_posts() ) {
-            echo '<select name="pagelist" id="pagelist">';
-            while ( $get_posts->have_posts() ) {
-                $get_posts->the_post();
-                echo '<option>' . get_the_title() . '</option>';
-            }
-            echo '</select>';
-        } else {
-            _e('No posts found', AIOA_TEXT_DOMAIN);
-        }
-        wp_reset_postdata();
-        die();
-    }
-
-    public function ajaxGetPostTypes() {
-        header("Pragma: no-cache");
-        header("Cache-Control: no-cache, must-revalidate");
-        header("Expires: Thu, 01 Jan 1970 00:00:00 GMT");
-        header("Content-type: text/plain");
-
-        $args = array(
-            'public'   => true,
-            '_builtin' => true
-        );
-
-        $post_types = get_post_types( $args, 'names' );
-        echo '<select name="posttypeslist" id="posttypeslist">';
-        foreach ( $post_types as $post_type ) {
-            echo '<option>' . $post_type . '</option>';
-        }
-        echo '</select>';
-        die();
-    }
-
-    public function ajaxPlacementSave() {
-        header("Pragma: no-cache");
-        header("Cache-Control: no-cache, must-revalidate");
-        header("Expires: Thu, 01 Jan 1970 00:00:00 GMT");
-        header("Content-type: text/plain");
-
-        update_post_meta($_POST['post_id'], 'display_tag_on', $_POST['placement_type']);
-    }
+    
 
 }
