@@ -471,6 +471,19 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
                 });
             });
 
+            $('#tracking_tag_id').on('change', '#posttypeslist', function(){
+                console.log('changed posttype');
+                $('#loadingimage').show();
+                var data = {
+                    'action': 'SavePostType',
+                    'posttype': $(this).val(),
+                    'post_id': <?=$post->ID?>
+                };
+                $.post(ajaxurl, data, function(response) {
+                    $('#loadingimage').hide();
+                });
+            });
+
             <?php 
             
             $pagetype = get_post_meta($post->ID, 'pagetype', true);
@@ -616,6 +629,17 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
             echo $this->generate_select_option($selected_post_type, $post_type, $post_type);
         }
         echo '</select>';
+        die();
+    }
+
+    public function ajaxSavePostType_callback() {
+        header("Pragma: no-cache");
+        header("Cache-Control: no-cache, must-revalidate");
+        header("Expires: Thu, 01 Jan 1970 00:00:00 GMT");
+        header("Content-type: text/plain");
+
+        update_post_meta($_POST['post_id'], 'posttype', $_POST['posttype']);
+        return true;
         die();
     }
 

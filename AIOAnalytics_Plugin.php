@@ -87,6 +87,7 @@ class AIOAnalytics_Plugin extends AIOAnalytics_LifeCycle {
         add_action('manage_trackingtag_posts_custom_column', 'custom_trackingtag_column', 10, 2 );
         add_action('wp_ajax_GetPosts', array(&$this, 'ajaxGetPosts_callback'));
         add_action('wp_ajax_GetPages', array(&$this, 'ajaxGetPages_callback'));
+        add_action('wp_ajax_SavePostType', array(&$this, 'ajaxSavePostType_callback'));
         add_action('wp_ajax_GetPostTypes', array(&$this, 'ajaxGetPostTypes_callback'));
         add_action('wp_ajax_PlacementSave', array(&$this, 'ajaxPlacementSave_callback'));
 
