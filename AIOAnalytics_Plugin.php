@@ -90,6 +90,8 @@ class AIOAnalytics_Plugin extends AIOAnalytics_LifeCycle {
         add_action('wp_ajax_SavePostType', array(&$this, 'ajaxSavePostType_callback'));
         add_action('wp_ajax_GetPostTypes', array(&$this, 'ajaxGetPostTypes_callback'));
         add_action('wp_ajax_PlacementSave', array(&$this, 'ajaxPlacementSave_callback'));
+        add_action('wp_ajax_SavePostName', array(&$this, 'ajaxSavePostName_callback'));
+        
 
         function title_text_input ( $title ) {
             if ( get_post_type() == 'trackingtag' ) {
@@ -128,7 +130,10 @@ class AIOAnalytics_Plugin extends AIOAnalytics_LifeCycle {
     public function register_scripts_and_styles() {
         if ( (strpos($_SERVER['REQUEST_URI'], $this->getSettingsSlug()) !== false) || $this->is_edit_page() ) {
             wp_enqueue_style('aioa-css', plugins_url('/css/aioa.css', __FILE__));
-            wp_enqueue_style('aioa-js', plugins_url('/js/aioa.css', __FILE__));
+            wp_enqueue_script('aioa-js', plugins_url('/js/aioa.js', __FILE__));
+
+            wp_register_script('aioa-jquery-repeater', plugins_url('/js/jquery.repeater.min.js', __FILE__), 'jquery');
+            wp_enqueue_script('aioa-jquery-repeater');
         }
     }
     

@@ -484,6 +484,19 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
                 });
             });
 
+            $('#tracking_tag_id').on('change', '#postlist', function(){
+                console.log('changed postlist');
+                $('#loadingimage').show();
+                var data = {
+                    'action': 'SavePostName',
+                    'postid': $(this).val(),
+                    'post_id': <?=$post->ID?>
+                };
+                $.post(ajaxurl, data, function(response) {
+                    $('#loadingimage').hide();
+                });
+            });
+
             <?php 
             
             $pagetype = get_post_meta($post->ID, 'pagetype', true);
@@ -568,6 +581,9 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
             echo '<select name="postlist" id="postlist">';
             while ( $get_posts->have_posts() ) {
                 $get_posts->the_post();
+                if (empty($selected_post) && $get_posts->current_post == 0) {
+                    update_post_meta($_POST['post_id'], 'postid', get_the_ID());
+                }
                 echo $this->generate_select_option($selected_post, get_the_ID(), get_the_title());
             }
             echo '</select>';
@@ -637,9 +653,16 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
         header("Cache-Control: no-cache, must-revalidate");
         header("Expires: Thu, 01 Jan 1970 00:00:00 GMT");
         header("Content-type: text/plain");
-
         update_post_meta($_POST['post_id'], 'posttype', $_POST['posttype']);
-        return true;
+        die();
+    }
+
+    public function ajaxSavePostName_callback() {
+        header("Pragma: no-cache");
+        header("Cache-Control: no-cache, must-revalidate");
+        header("Expires: Thu, 01 Jan 1970 00:00:00 GMT");
+        header("Content-type: text/plain");
+        update_post_meta($_POST['post_id'], 'postid', $_POST['postid']);
         die();
     }
 
@@ -682,8 +705,8 @@ class AIOAnalytics_LifeCycle extends AIOAnalytics_InstallIndicator {
         $output .= '<select name="pagetype" id="pagetype">';
         $output .= $this->generate_select_option();
         $output .= $this->generate_select_option($pagetype, 'Posts', __('Post', AIOA_TEXT_DOMAIN));
+        $output .= $this->generate_select_option($pagetype, 'Pages', __('Page', AIOA_TEXT_DOMAIN));
         $output .= $this->generate_select_option($pagetype, 'PostTypes', __('Post Type', AIOA_TEXT_DOMAIN));
-        $output .= $this->generate_select_option($pagetype, 'Pages', __('Posts', AIOA_TEXT_DOMAIN));
         $output .= '</select>';
         $output .= '<select name="operator" id="operator">';
         $output .= '<option value="equals">' . __('Equals', AIOA_TEXT_DOMAIN) . '</option>';
